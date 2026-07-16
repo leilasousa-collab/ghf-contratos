@@ -945,8 +945,11 @@ def api_stats():
     return jsonify(dict(stats))
 
 # ==================== INICIAR ====================
-if __name__ == '__main__':
+# Criar tabelas automaticamente (necessario para gunicorn no Render)
+with app.app_context():
     init_db()
+
+if __name__ == '__main__':
 
     print("=" * 50)
     print("  GHF - Sistema de Controle de Experiencia")
