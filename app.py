@@ -218,6 +218,63 @@ def init_db():
     cur.close()
     conn.close()
 
+def seed_dados_iniciais():
+    """Insere dados iniciais se o banco estiver vazio (para deploy online)"""
+    if not USANDO_POSTGRES:
+        return
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Verificar se ja tem usuarios
+    cur.execute("SELECT COUNT(*) FROM usuarios")
+    count = cur.fetchone()[0]
+    if count > 0:
+        cur.close()
+        conn.close()
+        return
+
+    print("📦 Inserindo dados iniciais no PostgreSQL...")
+
+    # Inserir usuario DP
+    senha_hash = hash_senha('123456')
+    cur.execute("INSERT INTO usuarios (nome, email, senha_hash, perfil) VALUES (%s, %s, %s, %s)",
+        ('Departamento Pessoal', 'dp@ghf.com', senha_hash, 'dp'))
+
+    # Inserir gestores de exemplo
+    gestores = [
+        ('Gestor Tocantina', 'gerente_area', None, None, 'TOCANTINA', '91', '991066091', 'tocantina@ghf.com'),
+        ('Gestor Maranhao Central', 'gerente_area', None, None, 'REGIONAL MARANHAO CENTRAL', '91', '991066091', 'maranhaocentral@ghf.com'),
+        ('Gestor Belem', 'gerente_area', None, None, 'REGIONAL BELEM', '91', '991066091', 'belem@ghf.com'),
+    ]
+    for g in gestores:
+        cur.execute("""INSERT INTO usuarios (nome, email, senha_hash, perfil, regional)
+            VALUES (%s, %s, %s, %s, %s)""",
+            (g[0], g[6], senha_hash, g[1], g[5]))
+
+    # Inserir colaboradores de exemplo
+    colaboradores = [
+        ('GHF', 'GHF PARTICIPACOES S A', '000121', 'JHENNYFER SILVA SANTOS', '91', '991066091',
+         'OPERADOR DE CAIXA', '', '2026-05-21', '2026-07-04', '2026-08-18',
+         'ULTRA POPULAR PARAGOMINAS MERCADO', 'REGIONAL TOCANTINA', 'pendente', 'pendente'),
+        ('GHF', 'GHF PARTICIPACOES S A', '000122', 'KAYLANE RODRIGUES SILVA', '91', '991066091',
+         'OPERADOR DE CAIXA', '', '2026-05-21', '2026-07-24', '2026-09-07',
+         'ULTRA POPULAR PARAGOMINAS MERCADO', 'REGIONAL TOCANTINA', 'pendente', 'pendente'),
+        ('GHF', 'GHF PARTICIPACOES S A', '000123', 'MARCIA FERNANDA COSTA', '91', '991066091',
+         'OPERADOR DE CAIXA', '', '2026-05-21', '2026-07-26', '2026-09-09',
+         'ULTRA POPULAR PARAGOMINAS MERCADO', 'REGIONAL TOCANTINA', 'pendente', 'pendente'),
+    ]
+    for c in colaboradores:
+        cur.execute("""INSERT INTO colaboradores
+            (empresa, nome_empresa, matricula, nome, ddd, celular, funcao, email,
+             data_admissao, vencimento_1, vencimento_2, departamento, setor, status_1, status_2)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", c)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("✅ Dados iniciais inseridos com sucesso!")
+
 # ==================== UTILIDADES ====================
 def hash_senha(senha):
     return hashlib.sha256(senha.encode('utf-8')).hexdigest()
@@ -948,6 +1005,7 @@ def api_stats():
 # Criar tabelas automaticamente (necessario para gunicorn no Render)
 with app.app_context():
     init_db()
+    seed_dados_iniciais()
 
 if __name__ == '__main__':
 
