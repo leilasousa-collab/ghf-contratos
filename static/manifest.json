@@ -1,0 +1,95 @@
+{
+    "name": "Controle de Experiencia DP",
+    "short_name": "Experiencia DP",
+    "description": "Sistema de controle de contratos de experiencia - GHF",
+    "start_url": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#FFFFFF",
+    "theme_color": "#CC0000",
+    "lang": "pt-BR",
+    "scope": "/",
+    "categories": ["business", "productivity"],
+    "icons": [
+        {
+            "src": "/static/images/icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/images/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/images/icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/images/icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/images/icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/images/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/images/icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/images/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/static/images/screenshot-desktop.png",
+            "sizes": "1920x1080",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Painel de Controle"
+        },
+        {
+            "src": "/static/images/screenshot-mobile.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Painel Mobile"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Painel DP",
+            "short_name": "DP",
+            "description": "Acessar painel do Departamento Pessoal",
+            "url": "/dp",
+            "icons": [{ "src": "/static/images/icon-96x96.png", "sizes": "96x96" }]
+        },
+        {
+            "name": "Painel Gestor",
+            "short_name": "Gestor",
+            "description": "Acessar painel do Gestor",
+            "url": "/gestor",
+            "icons": [{ "src": "/static/images/icon-96x96.png", "sizes": "96x96" }]
+        }
+    ]
+}

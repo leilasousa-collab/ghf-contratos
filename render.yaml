@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: ghf-contratos
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ghf-db
+          property: connectionString
+    autoDeploy: true
+
+databases:
+  - name: ghf-db
+    plan: free
+    databaseName: ghf_contratos
+    user: ghf_user

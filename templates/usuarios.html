@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block titulo %}Gerenciar Usuarios - GHF{% endblock %}
+
+{% block conteudo %}
+<div class="fade-in">
+    <!-- CABECALHO -->
+    <div class="mb-6 bg-white rounded-xl shadow-sm p-6 border-l-4 border-ghf-dark">
+        <div class="flex items-center gap-3">
+            <div class="bg-ghf-dark w-12 h-12 rounded-lg flex items-center justify-center">
+                <i class="fas fa-users-cog text-white text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-ghf-dark">Gerenciar Usuarios</h2>
+                <p class="text-gray-500">Adicionar, editar e gerenciar acessos ao sistema</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORMULARIO NOVO USUARIO -->
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-200">
+        <div class="flex items-center gap-2 mb-5">
+            <div class="bg-ghf-yellow w-2 h-6 rounded"></div>
+            <h3 class="text-lg font-bold text-ghf-dark">
+                <i class="fas fa-user-plus mr-2"></i>Novo Usuario
+            </h3>
+        </div>
+
+        <form method="POST" action="{{ url_for('novo_usuario') }}">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-gray-600 text-xs font-medium mb-1 uppercase">Nome *</label>
+                    <input type="text" name="nome" required
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-ghf-yellow focus:border-transparent"
+                           placeholder="Nome completo">
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-medium mb-1 uppercase">E-mail *</label>
+                    <input type="email" name="email" required
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-ghf-yellow focus:border-transparent"
+                           placeholder="email@ghf.com">
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-medium mb-1 uppercase">Senha *</label>
+                    <input type="password" name="senha" required
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-ghf-yellow focus:border-transparent"
+                           placeholder="Senha de acesso">
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-medium mb-1 uppercase">Perfil *</label>
+                    <select name="perfil" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-ghf-yellow focus:border-transparent">
+                        <option value="subgerente">Subgerente (1 Loja)</option>
+                        <option value="gerente_area">Gerente de Area (Varias Lojas)</option>
+                        <option value="supervisor">Supervisor (Regional)</option>
+                        <option value="dp">DP (Acesso Total)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-medium mb-1 uppercase">Loja (Subgerente)</label>
+                    <input type="text" name="loja"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-ghf-yellow focus:border-transparent"
+                           placeholder="Nome da loja">
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-medium mb-1 uppercase">Lojas (Gerente Area)</label>
+                    <input type="text" name="lojas"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-ghf-yellow focus:border-transparent"
+                           placeholder="Loja 1, Loja 2, Loja 3">
+                    <p class="text-xs text-gray-400 mt-1">Separar por virgula</p>
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-xs font-medium mb-1 uppercase">Regional (Supervisor)</label>
+                    <input type="text" name="regional"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-ghf-yellow focus:border-transparent"
+                           placeholder="Nome da regional">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-ghf-dark text-white px-5 py-2.5 rounded-lg text-sm hover:bg-gray-800 transition font-medium">
+                        <i class="fas fa-plus mr-1"></i>Cadastrar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- LISTA DE USUARIOS -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+        <div class="p-5 border-b bg-gray-50 flex items-center gap-2">
+            <div class="bg-ghf-red w-2 h-6 rounded"></div>
+            <h3 class="text-lg font-bold text-ghf-dark">
+                Usuarios Cadastrados ({{ usuarios|length }})
+            </h3>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-ghf-dark text-white">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Nome</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase">E-mail</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold uppercase">Perfil</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Loja/Regional</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold uppercase">Status</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold uppercase">Acoes</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for u in usuarios %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-semibold text-ghf-dark">{{ u.nome }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ u.email }}</td>
+                        <td class="px-4 py-3 text-center">
+                            {% if u.perfil == 'dp' %}
+                                <span class="bg-ghf-dark text-white px-3 py-1 rounded-full text-xs font-bold">DP</span>
+                            {% elif u.perfil == 'supervisor' %}
+                                <span class="bg-ghf-red text-white px-3 py-1 rounded-full text-xs font-bold">SUPERVISOR</span>
+                            {% elif u.perfil == 'gerente_area' %}
+                                <span class="bg-ghf-yellow text-ghf-dark px-3 py-1 rounded-full text-xs font-bold">GER. AREA</span>
+                            {% elif u.perfil == 'subgerente' %}
+                                <span class="bg-white border-2 border-ghf-yellow text-ghf-dark px-3 py-1 rounded-full text-xs font-bold">SUBGERENTE</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 text-xs">
+                            {% if u.lojas %}
+                                <span class="text-ghf-dark font-medium">{{ u.lojas }}</span>
+                            {% elif u.loja %}
+                                <span class="text-ghf-dark font-medium">{{ u.loja }}</span>
+                            {% elif u.regional %}
+                                <span class="text-ghf-red font-medium">{{ u.regional }}</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            {% if u.ativo %}
+                                <span class="bg-ghf-dark text-white px-3 py-1 rounded-full text-xs font-bold">ATIVO</span>
+                            {% else %}
+                                <span class="bg-ghf-red text-white px-3 py-1 rounded-full text-xs font-bold">INATIVO</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <a href="{{ url_for('toggle_usuario', usuario_id=u.id) }}"
+                               class="text-sm px-3 py-1 rounded-lg font-medium
+                                      {% if u.ativo %}bg-red-100 text-ghf-red hover:bg-red-200{% else %}bg-green-100 text-green-700 hover:bg-green-200{% endif %} transition">
+                                {% if u.ativo %}Desativar{% else %}Ativar{% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="bg-yellow-50 border border-ghf-yellow rounded-xl p-5 mt-6">
+        <div class="flex items-center gap-2 mb-3">
+            <div class="bg-ghf-yellow w-2 h-6 rounded"></div>
+            <h4 class="font-bold text-ghf-dark">
+                <i class="fas fa-info-circle mr-1"></i>Hierarquia de Acesso
+            </h4>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div class="bg-white p-3 rounded-lg border border-gray-200">
+                <p class="font-bold text-ghf-dark"><i class="fas fa-user text-ghf-yellow mr-1"></i>Subgerente</p>
+                <p class="text-gray-600">Ve apenas 1 loja especifica</p>
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-gray-200">
+                <p class="font-bold text-ghf-dark"><i class="fas fa-user-tie text-ghf-yellow mr-1"></i>Gerente de Area</p>
+                <p class="text-gray-600">Ve varias lojas (separadas por virgula)</p>
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-gray-200">
+                <p class="font-bold text-ghf-dark"><i class="fas fa-users text-ghf-red mr-1"></i>Supervisor</p>
+                <p class="text-gray-600">Ve toda a regional</p>
+            </div>
+            <div class="bg-white p-3 rounded-lg border border-gray-200">
+                <p class="font-bold text-ghf-dark"><i class="fas fa-user-shield text-ghf-dark mr-1"></i>DP</p>
+                <p class="text-gray-600">Acesso total a todas as lojas</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

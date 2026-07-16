@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHF - Acessar Sistema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#CC0000">
+    <link rel="apple-touch-icon" href="/static/images/icon-192x192.png">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ghf-red': '#CC0000',
+                        'ghf-yellow': '#FFD700',
+                        'ghf-dark': '#1A1A1A',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media (display-mode: standalone) {
+            .only-browser { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-ghf-dark text-white py-8">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <div class="bg-ghf-red w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <img src="/static/images/icon-192x192.png" alt="GHF" class="w-16 h-16 rounded-xl">
+            </div>
+            <h1 class="text-3xl font-bold mb-2">Controle de Experiencia DP</h1>
+            <p class="text-gray-400">Sistema de Gestao de Contratos - GHF</p>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+
+        <!-- Banner Instalar (aparece so no navegador) -->
+        <div id="install-section" class="only-browser bg-gradient-to-r from-ghf-red to-red-600 rounded-2xl p-6 mb-8 text-white shadow-xl">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold mb-2">
+                        <i class="fas fa-mobile-alt mr-2"></i>Instale o Aplicativo
+                    </h2>
+                    <p class="text-red-100 mb-4">Acesse mais rapido pela tela inicial do seu celular ou computador!</p>
+                    <button onclick="instalarApp()" id="btn-install"
+                            class="bg-white text-ghf-red px-8 py-3 rounded-xl font-bold hover:bg-gray-100 transition inline-flex items-center gap-2 shadow-lg">
+                        <i class="fas fa-download text-lg"></i>
+                        Instalar Agora
+                    </button>
+                </div>
+                <div class="hidden md:block">
+                    <img src="/static/images/icon-192x192.png" alt="App" class="w-24 h-24 rounded-2xl shadow-lg">
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 text-center">
+            <h2 class="text-xl font-bold text-ghf-dark mb-4">
+                <i class="fas fa-qrcode mr-2 text-ghf-red"></i>Acesso Rapido
+            </h2>
+            <p class="text-gray-500 mb-6">Escaneie o QR Code para acessar o sistema</p>
+            <div class="inline-block p-4 bg-white rounded-xl shadow-md border-2 border-gray-100">
+                <img src="/static/images/qrcode-acesso.png" alt="QR Code" class="w-48 h-48">
+            </div>
+            <p class="text-sm text-gray-400 mt-4">
+                <i class="fas fa-link mr-1"></i>
+                <span class="font-mono bg-gray-100 px-3 py-1 rounded-lg">http://192.168.2.100:5000</span>
+            </p>
+        </div>
+
+        <!-- Instrucoes por Plataforma -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+
+            <!-- Android -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="bg-green-100 w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fab fa-android text-green-600 text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-ghf-dark text-lg text-center mb-3">Android</h3>
+                <ol class="space-y-2 text-sm text-gray-600">
+                    <li class="flex gap-2">
+                        <span class="bg-ghf-yellow w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-ghf-dark flex-shrink-0">1</span>
+                        <span>Escaneie o QR Code</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-ghf-yellow w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-ghf-dark flex-shrink-0">2</span>
+                        <span>Toque em <strong>"Instalar Aplicativo"</strong></span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-green-500 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-white text-xs"></i>
+                        </span>
+                        <span>Pronto! O icone aparece na tela inicial</span>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- iPhone -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="bg-gray-100 w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fab fa-apple text-gray-800 text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-ghf-dark text-lg text-center mb-3">iPhone</h3>
+                <ol class="space-y-2 text-sm text-gray-600">
+                    <li class="flex gap-2">
+                        <span class="bg-ghf-yellow w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-ghf-dark flex-shrink-0">1</span>
+                        <span>Escaneie o QR Code no <strong>Safari</strong></span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-ghf-yellow w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-ghf-dark flex-shrink-0">2</span>
+                        <span>Toque no icone <strong>Compartilhar [^]</strong></span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-ghf-yellow w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-ghf-dark flex-shrink-0">3</span>
+                        <span>Selecione <strong>"Adicionar a Tela de Inicio"</strong></span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-green-500 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-white text-xs"></i>
+                        </span>
+                        <span>Pronto! O icone aparece na tela inicial</span>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Computador -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="bg-blue-100 w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-desktop text-blue-600 text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-ghf-dark text-lg text-center mb-3">Computador</h3>
+                <ol class="space-y-2 text-sm text-gray-600">
+                    <li class="flex gap-2">
+                        <span class="bg-ghf-yellow w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-ghf-dark flex-shrink-0">1</span>
+                        <span>Acesse pelo <strong>Chrome ou Edge</strong></span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-ghf-yellow w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-ghf-dark flex-shrink-0">2</span>
+                        <span>Clique no menu <strong>⋮</strong> (3 pontos)</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-ghf-yellow w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-ghf-dark flex-shrink-0">3</span>
+                        <span>Selecione <strong>"Instalar aplicativo"</strong></span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-green-500 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-white text-xs"></i>
+                        </span>
+                        <span>Pronto! Atalho na area de trabalho</span>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Credenciais -->
+        <div class="bg-ghf-dark rounded-2xl p-6 text-white">
+            <h2 class="text-xl font-bold mb-4 text-center">
+                <i class="fas fa-key mr-2 text-ghf-yellow"></i>Acesso do Sistema
+            </h2>
+            <div class="bg-gray-800 rounded-xl p-4 max-w-md mx-auto">
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <p class="text-gray-400 text-xs uppercase mb-1">Email</p>
+                        <p class="font-mono bg-gray-700 px-3 py-2 rounded-lg text-ghf-yellow">dp@ghf.com</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs uppercase mb-1">Senha</p>
+                        <p class="font-mono bg-gray-700 px-3 py-2 rounded-lg text-ghf-yellow">123456</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-gray-400 text-xs text-center mt-4">
+                <i class="fas fa-info-circle mr-1"></i>
+                Cada gestor deve ter seu proprio usuario. Solicite ao DP.
+            </p>
+        </div>
+
+        <!-- Link para compartilhar -->
+        <div class="mt-8 text-center">
+            <button onclick="compartilhar()" class="bg-ghf-yellow text-ghf-dark px-8 py-3 rounded-xl font-bold hover:bg-yellow-400 transition inline-flex items-center gap-2">
+                <i class="fas fa-share-alt"></i>
+                Compartilhar Link
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-ghf-dark text-gray-400 text-center py-6 mt-8">
+        <div class="flex items-center justify-center gap-2 mb-2">
+            <div class="bg-ghf-red w-2 h-2 rounded-full"></div>
+            <p class="font-medium">GHF - Sistema de Controle de Experiencia</p>
+            <div class="bg-ghf-yellow w-2 h-2 rounded-full"></div>
+        </div>
+        <p class="text-xs">Departamento Pessoal</p>
+    </footer>
+
+    <script>
+        let deferredPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-section').style.display = 'block';
+        });
+
+        async function instalarApp() {
+            if (!deferredPrompt) {
+                alert('Para instalar, use o menu do navegador (3 pontos) > "Instalar aplicativo".');
+                return;
+            }
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                document.getElementById('install-section').innerHTML = `
+                    <div class="bg-green-500 rounded-2xl p-6 text-white text-center">
+                        <i class="fas fa-check-circle text-4xl mb-3"></i>
+                        <h2 class="text-xl font-bold">App Instalado!</h2>
+                        <p class="text-green-100">O icone ja esta na sua tela inicial</p>
+                    </div>
+                `;
+            }
+            deferredPrompt = null;
+        }
+
+        function compartilhar() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'GHF - Controle de Experiencia',
+                    text: 'Acesse o sistema de controle de contratos de experiencia',
+                    url: 'http://192.168.2.100:5000'
+                });
+            } else {
+                navigator.clipboard.writeText('http://192.168.2.100:5000');
+                alert('Link copiado! Envie para os gestores.');
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/service-worker.js');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block titulo %}GHF - Controle Experiencia{% endblock %}</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#CC0000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Experiencia DP">
+    <meta name="description" content="Sistema de controle de contratos de experiencia - GHF">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- PWA Links -->
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/images/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/icon-96x96.png">
+
+    <!-- Fonts & Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ghf-red': '#CC0000',
+                        'ghf-yellow': '#FFD700',
+                        'ghf-dark': '#1A1A1A',
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .card-hover { transition: all 0.2s ease; }
+        .btn-ghf { @apply px-4 py-2 rounded font-medium text-sm transition-all duration-200; }
+        .btn-ghf:hover { @apply transform scale-105; }
+
+        /* PWA Install Banner */
+        #install-banner {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            animation: slideUp 0.4s ease-out;
+        }
+        #install-banner.show { display: block; }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        /* iOS Instructions Modal */
+        #ios-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        #ios-modal.show { display: flex; align-items: center; justify-content: center; }
+
+        /* Standalone mode adjustments */
+        @media (display-mode: standalone) {
+            .install-banner-container { display: none !important; }
+        }
+
+        /* Safe area for mobile */
+        body {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+    <!-- BANNER DE INSTALACAO PWA -->
+    <div id="install-banner" class="install-banner-container">
+        <div class="bg-gradient-to-r from-ghf-red to-red-700 text-white p-4 shadow-2xl">
+            <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-mobile-alt text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold">Instalar Aplicativo na Tela Inicial</p>
+                        <p class="text-red-100 text-sm">Acesse mais rapido, como um app!</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 flex-shrink-0">
+                    <button onclick="instalarApp()" id="btn-install"
+                            class="bg-white text-ghf-red px-5 py-2.5 rounded-lg font-bold hover:bg-gray-100 transition flex items-center gap-2">
+                        <i class="fas fa-download"></i>
+                        <span class="hidden sm:inline">Instalar</span>
+                    </button>
+                    <button onclick="mostrarInstrucoesIOS()" id="btn-ios-help"
+                            class="bg-white/20 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-white/30 transition sm:hidden">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                    <button onclick="fecharBanner()" class="text-white/70 hover:text-white px-2">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INSTRUCOES iOS -->
+    <div id="ios-modal">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md mx-4 overflow-hidden fade-in">
+            <div class="bg-ghf-dark p-6 text-center">
+                <div class="bg-ghf-red w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fab fa-apple text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">Instalar no iPhone</h3>
+                <p class="text-gray-400 text-sm">Siga os passos abaixo</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <!-- Passo 1 -->
+                    <div class="flex items-start gap-4">
+                        <div class="bg-ghf-yellow w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-ghf-dark font-bold">1</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-ghf-dark">Toque no icone de Compartilhar</p>
+                            <p class="text-gray-500 text-sm">O botao quadrado com seta para cima, na barra inferior do Safari</p>
+                            <div class="bg-gray-100 mt-2 p-3 rounded-lg text-center">
+                                <i class="fas fa-arrow-up-from-bracket text-ghf-red text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Passo 2 -->
+                    <div class="flex items-start gap-4">
+                        <div class="bg-ghf-yellow w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-ghf-dark font-bold">2</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-ghf-dark">Selecione "Adicionar a Tela de Inicio"</p>
+                            <p class="text-gray-500 text-sm">Role para baixo e toque nessa opcao</p>
+                            <div class="bg-gray-100 mt-2 p-3 rounded-lg text-center">
+                                <i class="fas fa-plus-square text-ghf-red text-2xl mr-2"></i>
+                                <span class="text-sm font-medium">Adicionar a Tela de Inicio</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Passo 3 -->
+                    <div class="flex items-start gap-4">
+                        <div class="bg-green-500 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-white"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-ghf-dark">Pronto!</p>
+                            <p class="text-gray-500 text-sm">O app aparecera na tela inicial do seu iPhone</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="fecharModalIOS()"
+                        class="w-full mt-6 bg-ghf-dark text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition">
+                    Entendi!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL COMPARTILHAR -->
+    <div id="share-modal" class="fixed inset-0 z-10000 hidden" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto fade-in">
+                <!-- Header -->
+                <div class="bg-ghf-dark p-5 text-center relative">
+                    <button onclick="fecharModalCompartilhar()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                    <div class="bg-ghf-red w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-share-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Compartilhar Acesso</h3>
+                    <p class="text-gray-400 text-sm">Envie o link para quem precisa acessar</p>
+                </div>
+
+                <div class="p-6">
+                    <!-- QR Code -->
+                    <div class="text-center mb-6">
+                        <div class="inline-block p-3 bg-white rounded-xl shadow-md border-2 border-gray-100">
+                            <img src="/static/images/qrcode-acesso.png" alt="QR Code" class="w-40 h-40">
+                        </div>
+                        <p class="text-gray-500 text-sm mt-2">
+                            <i class="fas fa-mobile-alt mr-1"></i>Escaneie para acessar pelo celular
+                        </p>
+                    </div>
+
+                    <!-- Link para copiar -->
+                    <div class="mb-6">
+                        <label class="block text-gray-600 text-xs font-medium mb-2 uppercase">Link do Sistema</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="link-sistema" value="http://192.168.2.100:5000" readonly
+                                   class="flex-1 bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 text-sm font-mono text-gray-700 focus:outline-none">
+                            <button onclick="copiarLink()" id="btn-copiar"
+                                    class="bg-ghf-yellow text-ghf-dark px-5 py-3 rounded-lg font-bold hover:bg-yellow-400 transition flex items-center gap-2">
+                                <i class="fas fa-copy"></i>
+                                <span class="hidden sm:inline">Copiar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botoes de compartilhar -->
+                    <div class="mb-6">
+                        <label class="block text-gray-600 text-xs font-medium mb-3 uppercase">Ou compartilhe via</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button onclick="compartilharWhatsApp()"
+                                    class="bg-green-500 text-white py-3 rounded-xl font-bold hover:bg-green-600 transition flex flex-col items-center gap-1">
+                                <i class="fab fa-whatsapp text-xl"></i>
+                                <span class="text-xs">WhatsApp</span>
+                            </button>
+                            <button onclick="compartilharEmail()"
+                                    class="bg-blue-500 text-white py-3 rounded-xl font-bold hover:bg-blue-600 transition flex flex-col items-center gap-1">
+                                <i class="fas fa-envelope text-xl"></i>
+                                <span class="text-xs">Email</span>
+                            </button>
+                            <button onclick="instalarAppModal()"
+                                    class="bg-ghf-dark text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition flex flex-col items-center gap-1">
+                                <i class="fas fa-download text-xl"></i>
+                                <span class="text-xs">Instalar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Instrucoes por plataforma -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="font-bold text-ghf-dark text-sm mb-3">
+                            <i class="fas fa-info-circle text-ghf-red mr-1"></i>Como instalar o app:
+                        </p>
+                        <div class="space-y-2 text-xs text-gray-600">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-green-500 text-white w-5 h-5 rounded flex items-center justify-center flex-shrink-0">
+                                    <i class="fab fa-android text-[10px]"></i>
+                                </span>
+                                <span><strong>Android:</strong> Clique "Instalar" ou menu ⋮ > Instalar aplicativo</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="bg-gray-700 text-white w-5 h-5 rounded flex items-center justify-center flex-shrink-0">
+                                    <i class="fab fa-apple text-[10px]"></i>
+                                </span>
+                                <span><strong>iPhone:</strong> Compartilhar [^] > Adicionar a Tela de Inicio</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="bg-blue-500 text-white w-5 h-5 rounded flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-desktop text-[10px]"></i>
+                                </span>
+                                <span><strong>PC:</strong> Menu ⋮ (Chrome) > Instalar aplicativo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fechar -->
+                    <button onclick="fecharModalCompartilhar()"
+                            class="w-full mt-5 bg-ghf-red text-white py-3 rounded-xl font-bold hover:bg-red-700 transition">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="bg-ghf-dark text-white shadow-xl" style="padding-top: env(safe-area-inset-top);">
+        <div class="max-w-7xl mx-auto px-4 py-0">
+            <div class="flex justify-between items-center">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 py-3">
+                    <div class="bg-ghf-red w-10 h-10 rounded-lg flex items-center justify-center">
+                        <img src="/static/images/icon-96x96.png" alt="GHF" class="w-8 h-8 rounded">
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight">GHF</h1>
+                        <p class="text-gray-400 text-xs">Controle de Experiencia</p>
+                    </div>
+                </div>
+
+                {% if session.usuario_nome %}
+                <!-- Menu -->
+                <div class="flex items-center gap-3">
+                    <!-- Info Usuario -->
+                    <div class="text-right hidden md:block border-r border-gray-600 pr-3">
+                        <p class="font-medium text-sm">{{ session.usuario_nome }}</p>
+                        <p class="text-gray-400 text-xs">
+                            {% if session.perfil == 'dp' %}
+                                <span class="text-ghf-yellow">Departamento Pessoal</span>
+                            {% elif session.perfil == 'supervisor' %}
+                                <span class="text-ghf-yellow">Supervisor: {{ session.regional }}</span>
+                            {% elif session.perfil == 'gerente_area' %}
+                                <span class="text-ghf-yellow">Gerente de Area</span>
+                            {% elif session.perfil == 'subgerente' %}
+                                <span class="text-ghf-yellow">Subgerente: {{ session.loja }}</span>
+                            {% else %}
+                                <span class="text-ghf-yellow">{{ session.loja }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Botoes -->
+                    <div class="flex gap-2">
+                        {% if session.perfil == 'dp' %}
+                        <a href="{{ url_for('dp_dashboard') }}" class="bg-white text-ghf-dark hover:bg-gray-200 btn-ghf">
+                            <i class="fas fa-chart-line mr-1"></i><span class="hidden sm:inline">DP</span>
+                        </a>
+                        <a href="{{ url_for('supervisor_dashboard') }}" class="bg-blue-600 text-white hover:bg-blue-700 btn-ghf">
+                            <i class="fas fa-tachometer-alt mr-1"></i><span class="hidden sm:inline">Supervisores</span>
+                        </a>
+                        <a href="{{ url_for('atualizar_pagina') }}" class="bg-ghf-yellow text-ghf-dark hover:bg-yellow-400 btn-ghf">
+                            <i class="fas fa-upload mr-1"></i><span class="hidden sm:inline">Atualizar</span>
+                        </a>
+                        <a href="{{ url_for('gerenciar_usuarios') }}" class="bg-gray-700 text-white hover:bg-gray-600 btn-ghf">
+                            <i class="fas fa-users mr-1"></i><span class="hidden sm:inline">Usuarios</span>
+                        </a>
+                        {% elif session.perfil == 'supervisor' %}
+                        <a href="{{ url_for('supervisor_dashboard') }}" class="bg-blue-600 text-white hover:bg-blue-700 btn-ghf">
+                            <i class="fas fa-tachometer-alt mr-1"></i><span class="hidden sm:inline">Dashboard</span>
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('gestor_dashboard') }}" class="bg-ghf-yellow text-ghf-dark hover:bg-yellow-400 btn-ghf">
+                            <i class="fas fa-clipboard-check mr-1"></i><span class="hidden sm:inline">Validar</span>
+                        </a>
+                        <a href="{{ url_for('exportar') }}" class="bg-ghf-red text-white hover:bg-red-700 btn-ghf">
+                            <i class="fas fa-file-excel mr-1"></i><span class="hidden sm:inline">Exportar</span>
+                        </a>
+                        <button onclick="abrirModalCompartilhar()" class="bg-green-600 text-white hover:bg-green-700 btn-ghf" title="Compartilhar Acesso">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                        <a href="{{ url_for('logout') }}" class="bg-gray-700 text-white hover:bg-gray-600 btn-ghf">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 mt-4">
+        {% for category, message in messages %}
+        <div class="p-4 rounded-lg mb-2 fade-in shadow-sm
+            {% if category == 'erro' %}bg-red-50 border-l-4 border-ghf-red text-red-800
+            {% elif category == 'sucesso' %}bg-green-50 border-l-4 border-green-500 text-green-800
+            {% else %}bg-yellow-50 border-l-4 border-ghf-yellow text-yellow-800{% endif %}">
+            <i class="fas {% if category == 'erro' %}fa-exclamation-circle{% elif category == 'sucesso' %}fa-check-circle{% else %}fa-info-circle{% endif %} mr-2"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- CONTEUDO PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 py-6" style="padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));">
+        {% block conteudo %}{% endblock %}
+    </main>
+
+    <!-- RODAPE -->
+    <footer class="bg-ghf-dark text-gray-400 text-center py-4 mt-8">
+        <div class="flex items-center justify-center gap-2">
+            <div class="bg-ghf-red w-2 h-2 rounded-full"></div>
+            <p class="text-sm">GHF - Sistema de Controle de Experiencia</p>
+            <div class="bg-ghf-yellow w-2 h-2 rounded-full"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Departamento Pessoal</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+
+    <!-- PWA Installation Script -->
+    <script>
+        let deferredPrompt = null;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const installBanner = document.getElementById('install-banner');
+        const btnInstall = document.getElementById('btn-install');
+        const btnIOSHelp = document.getElementById('btn-ios-help');
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(reg => console.log('SW registrado:', reg.scope))
+                    .catch(err => console.log('Erro SW:', err));
+            });
+        }
+
+        // Detect PWA install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            if (!isStandalone) {
+                installBanner.classList.add('show');
+            }
+
+            if (isIOS) {
+                btnInstall.style.display = 'none';
+                btnIOSHelp.style.display = 'block';
+            }
+        });
+
+        // iOS shows help button instead
+        if (isIOS && !isStandalone) {
+            setTimeout(() => {
+                installBanner.classList.add('show');
+                btnInstall.style.display = 'none';
+                btnIOSHelp.style.display = 'block';
+            }, 1000);
+        }
+
+        // Already installed
+        window.addEventListener('appinstalled', () => {
+            installBanner.classList.remove('show');
+            deferredPrompt = null;
+        });
+
+        // Install button click
+        async function instalarApp() {
+            if (!deferredPrompt) {
+                if (isIOS) {
+                    mostrarInstrucoesIOS();
+                } else {
+                    alert('Para instalar, use o menu do navegador (3 pontos) > "Instalar aplicativo".');
+                }
+                return;
+            }
+
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('Resultado instalacao:', outcome);
+            deferredPrompt = null;
+            installBanner.classList.remove('show');
+        }
+
+        // Close banner
+        function fecharBanner() {
+            installBanner.classList.remove('show');
+            sessionStorage.setItem('installBannerDismissed', 'true');
+        }
+
+        // iOS Modal
+        function mostrarInstrucoesIOS() {
+            document.getElementById('ios-modal').classList.add('show');
+        }
+
+        function fecharModalIOS() {
+            document.getElementById('ios-modal').classList.remove('show');
+        }
+
+        // Don't show again if dismissed this session
+        if (sessionStorage.getItem('installBannerDismissed') === 'true') {
+            installBanner.classList.remove('show');
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            setTimeout(() => {
+                Notification.requestPermission();
+            }, 5000);
+        }
+
+        // ==================== MODAL COMPARTILHAR ====================
+        function abrirModalCompartilhar() {
+            document.getElementById('share-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function fecharModalCompartilhar() {
+            document.getElementById('share-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function copiarLink() {
+            const linkInput = document.getElementById('link-sistema');
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                const btn = document.getElementById('btn-copiar');
+                btn.innerHTML = '<i class="fas fa-check"></i> <span class="hidden sm:inline">Copiado!</span>';
+                btn.classList.remove('bg-ghf-yellow');
+                btn.classList.add('bg-green-500', 'text-white');
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-copy"></i> <span class="hidden sm:inline">Copiar</span>';
+                    btn.classList.add('bg-ghf-yellow');
+                    btn.classList.remove('bg-green-500', 'text-white');
+                }, 2000);
+            });
+        }
+
+        function compartilharWhatsApp() {
+            const msg = encodeURIComponent(
+                'GHF - Controle de Experiencia\n\n' +
+                'Acesse o sistema de controle de contratos:\n' +
+                'http://192.168.2.100:5000\n\n' +
+                'Para instalar como app na tela inicial, acesse pelo Chrome e clique em "Instalar aplicativo".'
+            );
+            window.open('https://api.whatsapp.com/send?text=' + msg, '_blank');
+        }
+
+        function compartilharEmail() {
+            const subject = encodeURIComponent('GHF - Acesso ao Sistema de Controle de Experiencia');
+            const body = encodeURIComponent(
+                'Ola!\n\n' +
+                'Acesse o sistema de controle de contratos de experiencia GHF:\n\n' +
+                'http://192.168.2.100:5000\n\n' +
+                'Para instalar como aplicativo na tela inicial:\n' +
+                '- Android: Acesse pelo Chrome > menu ⋮ > Instalar aplicativo\n' +
+                '- iPhone: Acesse pelo Safari > Compartilhar > Adicionar a Tela de Inicio\n' +
+                '- PC: Acesse pelo Chrome > menu ⋮ > Instalar aplicativo\n\n' +
+                'Att,\nDepartamento Pessoal - GHF'
+            );
+            window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+        }
+
+        function instalarAppModal() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    deferredPrompt = null;
+                });
+            } else if (isIOS) {
+                fecharModalCompartilhar();
+                mostrarInstrucoesIOS();
+            } else {
+                alert('Para instalar, use o menu do navegador (3 pontos) > "Instalar aplicativo".');
+            }
+        }
+
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                fecharModalCompartilhar();
+                fecharModalIOS();
+            }
+        });
+
+        // Fechar modal clicando fora
+        document.getElementById('share-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'share-modal') {
+                fecharModalCompartilhar();
+            }
+        });
+    </script>
+</body>
+</html>

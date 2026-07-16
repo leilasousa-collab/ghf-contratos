@@ -1,0 +1,140 @@
+# COMO COLOCAR O SISTEMA ONLINE (GUIA ULTRA SIMPLES)
+
+## OBJETIVO
+Colocar o sistema na internet para funcionar 24h, de qualquer lugar, sem depender do notebook.
+
+## CUSTO: R$ 0,00 (GRATUITO)
+
+---
+
+## PASSO 1: ABRIR O GITHUB (5 minutos)
+
+1. Abra o navegador (Chrome, Edge, etc.)
+2. Digite: **https://github.com**
+3. Clique em **"Sign up"** (canto superior direito)
+4. Preencha:
+   - Email: **seu_email@gmail.com**
+   - Password: **crie uma senha forte**
+   - Username: **ghf-contratos**
+5. Clique em **"Create account"**
+6. Abra seu email e clique no link de confirmação
+
+---
+
+## PASSO 2: ABRIR O RENDER.COM (5 minutos)
+
+1. Abra o navegador
+2. Digite: **https://render.com**
+3. Clique em **"Get Started for Free"**
+4. Clique em **"Sign up with GitHub"**
+5. Autorize o acesso
+6. Pronto! Conta criada
+
+---
+
+## PASSO 3: ENVIAR O CÓDIGO PARA O GITHUB (10 minutos)
+
+### Opção A: GitHub Desktop (MAIS FÁCIL)
+
+1. Baixe: **https://desktop.github.com**
+2. Instale e abra
+3. Faça login com sua conta do GitHub
+4. Clique em **"File"** > **"Add Local Repository"**
+5. Clique em **"Choose..."** e selecione a pasta:
+   ```
+   C:\Users\leila\OneDrive\docmentos\Documentos\New OpenCode Project\projeto-ghf
+   ```
+6. Clique em **"Add Repository"**
+7. Clique em **"Publish Repository"**
+8. Nome: **ghf-contratos**
+9. Desmarque **"Keep this code private"** (para funcionar)
+10. Clique em **"Publish Repository"**
+
+---
+
+## PASSO 4: HOSPEDAR NO RENDER.COM (5 minutos)
+
+1. Acesse: **https://dashboard.render.com**
+2. Clique em **"New"** > **"Web Service"**
+3. Conecte sua conta do GitHub
+4. Selecione o repositório: **ghf-contratos**
+5. Preencha:
+   - **Name**: ghf-contratos
+   - **Runtime**: Python
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn app:app`
+6. Em **"Environment"**, adicione:
+   - **Key**: PYTHON_VERSION
+   - **Value**: 3.11.0
+7. Clique em **"Create Web Service"**
+8. Aguarde 2-3 minutos para deploy
+
+---
+
+## PASSO 5: ACESSAR O SISTEMA
+
+Após o deploy, você receberá uma URL como:
+```
+https://ghf-contratos.onrender.com
+```
+
+**Essa URL funciona em QUALQUER dispositivo, de QUALQUER lugar!**
+
+---
+
+## DADOS INICIAIS
+
+O sistema já vem com:
+- **Login DP**: dp@ghf.com / 123456
+- **203 colaboradores** importados
+- **14 gestores** cadastrados
+
+---
+
+## COMO FUNCIONA
+
+```
+ANTES:
+Seu notebook (em casa) → Servidor local → Acesso limitado
+
+AGORA:
+Render.com (nuvem) → Servidor 24h → Acesso de qualquer lugar
+```
+
+---
+
+## PROBLEMAS COMUNS
+
+### 1. O site demora para abrir
+- O Render.com no plano gratuito "dorme" após 15 minutos sem uso
+- Na primeira vez, aguarde 30-60 segundos para "acordar"
+- Depois fica rápido
+
+### 2. Erro de conexão
+- Verifique se digitou a URL corretamente
+- Aguarde alguns minutos e tente novamente
+
+### 3. Não consigo fazer deploy
+- Verifique se o GitHub Desktop está logado
+- Verifique se o repositório foi criado
+
+---
+
+## SUPORTE
+
+Se tiver dúvidas, me chame que ajudo!
+
+---
+
+## VANTAGENS
+
+| Recurso | Gratuito |
+|---------|----------|
+| Hospedagem | ✅ |
+| URL personalizada | ✅ |
+| HTTPS seguro | ✅ |
+| Sem limite de acesso | ✅ |
+| Sem depender do seu PC | ✅ |
+| Funciona 24h | ✅ |
+
+**Para 203 colaboradores, o plano gratuito é mais que suficiente!**
