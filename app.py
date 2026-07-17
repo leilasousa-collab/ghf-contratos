@@ -70,25 +70,58 @@ def add_header(response):
     return response
 
 # ==================== CONEXAO BANCO ====================
+
+class DBWrapper:
+    """Wrapper que adapta queries SQLite (?) para PostgreSQL (%s) automaticamente"""
+    def __init__(self, conn):
+        self.conn = conn
+        self.is_pg = USANDO_POSTGRES
+
+    def _adapt(self, query):
+        if self.is_pg:
+            return query.replace('?', '%s')
+        return query
+
+    def execute(self, query, params=None):
+        return self.conn.execute(self._adapt(query), params or ())
+
+    def fetchone(self, query, params=None):
+        return self.conn.execute(self._adapt(query), params or ()).fetchone()
+
+    def fetchall(self, query, params=None):
+        return self.conn.execute(self._adapt(query), params or ()).fetchall()
+
+    def executescript(self, script):
+        if not self.is_pg:
+            self.conn.executescript(script)
+
+    def commit(self):
+        self.conn.commit()
+
+    def rollback(self):
+        self.conn.rollback()
+
+    def close(self):
+        self.conn.close()
+
 def get_db():
     if USANDO_POSTGRES:
         conn = psycopg2.connect(DATABASE)
         conn.cursor_factory = psycopg2.extras.RealDictCursor
-        return conn
+        return DBWrapper(conn)
     else:
         import sqlite3
         conn = sqlite3.connect(DATABASE)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
-        return conn
+        return DBWrapper(conn)
 
 def init_db():
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
     
     if USANDO_POSTGRES:
         # PostgreSQL
-        cur.execute('''
+        db.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
                 nome TEXT NOT NULL,
@@ -101,7 +134,7 @@ def init_db():
                 criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        cur.execute('''
+        db.execute('''
             CREATE TABLE IF NOT EXISTS colaboradores (
                 id SERIAL PRIMARY KEY,
                 empresa TEXT,
@@ -127,7 +160,7 @@ def init_db():
                 atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        cur.execute('''
+        db.execute('''
             CREATE TABLE IF NOT EXISTS alertas_log (
                 id SERIAL PRIMARY KEY,
                 colaborador_id INTEGER,
@@ -137,7 +170,7 @@ def init_db():
                 FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id)
             )
         ''')
-        cur.execute('''
+        db.execute('''
             CREATE TABLE IF NOT EXISTS gestores (
                 id SERIAL PRIMARY KEY,
                 nome TEXT NOT NULL,
@@ -152,7 +185,7 @@ def init_db():
                 criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        cur.execute('''
+        db.execute('''
             CREATE TABLE IF NOT EXISTS config_sistema (
                 chave TEXT PRIMARY KEY,
                 valor TEXT
@@ -161,7 +194,7 @@ def init_db():
     else:
         # SQLite
         os.makedirs(os.path.dirname(DATABASE), exist_ok=True)
-        conn.executescript('''
+        db.executescript('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT NOT NULL,
@@ -214,43 +247,40 @@ def init_db():
             );
         ''')
     
-    conn.commit()
-    cur.close()
-    conn.close()
+    db.commit()
+    db.close()
 
 def seed_dados_iniciais():
     """Insere dados iniciais se o banco estiver vazio (para deploy online)"""
     if not USANDO_POSTGRES:
         return
 
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
 
     # Verificar se ja tem usuarios
-    cur.execute("SELECT COUNT(*) FROM usuarios")
-    count = cur.fetchone()[0]
+    result = db.fetchone("SELECT COUNT(*) as cnt FROM usuarios")
+    count = result['cnt'] if result else 0
     if count > 0:
-        cur.close()
-        conn.close()
+        db.close()
         return
 
     print("📦 Inserindo dados iniciais no PostgreSQL...")
 
     # Inserir usuario DP
     senha_hash = hash_senha('123456')
-    cur.execute("INSERT INTO usuarios (nome, email, senha_hash, perfil) VALUES (%s, %s, %s, %s)",
+    db.execute("INSERT INTO usuarios (nome, email, senha_hash, perfil) VALUES (?, ?, ?, ?)",
         ('Departamento Pessoal', 'dp@ghf.com', senha_hash, 'dp'))
 
     # Inserir gestores de exemplo
     gestores = [
-        ('Gestor Tocantina', 'gerente_area', None, None, 'TOCANTINA', '91', '991066091', 'tocantina@ghf.com'),
-        ('Gestor Maranhao Central', 'gerente_area', None, None, 'REGIONAL MARANHAO CENTRAL', '91', '991066091', 'maranhaocentral@ghf.com'),
-        ('Gestor Belem', 'gerente_area', None, None, 'REGIONAL BELEM', '91', '991066091', 'belem@ghf.com'),
+        ('Gestor Tocantina', 'gerente_area', 'TOCANTINA', '91', '991066091', 'tocantina@ghf.com'),
+        ('Gestor Maranhao Central', 'gerente_area', 'REGIONAL MARANHAO CENTRAL', '91', '991066091', 'maranhaocentral@ghf.com'),
+        ('Gestor Belem', 'gerente_area', 'REGIONAL BELEM', '91', '991066091', 'belem@ghf.com'),
     ]
     for g in gestores:
-        cur.execute("""INSERT INTO usuarios (nome, email, senha_hash, perfil, regional)
-            VALUES (%s, %s, %s, %s, %s)""",
-            (g[0], g[6], senha_hash, g[1], g[5]))
+        db.execute("""INSERT INTO usuarios (nome, email, senha_hash, perfil, regional)
+            VALUES (?, ?, ?, ?, ?)""",
+            (g[0], g[5], senha_hash, g[1], g[2]))
 
     # Inserir colaboradores de exemplo
     colaboradores = [
@@ -265,14 +295,13 @@ def seed_dados_iniciais():
          'ULTRA POPULAR PARAGOMINAS MERCADO', 'REGIONAL TOCANTINA', 'pendente', 'pendente'),
     ]
     for c in colaboradores:
-        cur.execute("""INSERT INTO colaboradores
+        db.execute("""INSERT INTO colaboradores
             (empresa, nome_empresa, matricula, nome, ddd, celular, funcao, email,
              data_admissao, vencimento_1, vencimento_2, departamento, setor, status_1, status_2)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", c)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", c)
 
-    conn.commit()
-    cur.close()
-    conn.close()
+    db.commit()
+    db.close()
     print("✅ Dados iniciais inseridos com sucesso!")
 
 # ==================== UTILIDADES ====================
@@ -352,10 +381,10 @@ def login():
             return render_template('login.html')
 
         db = get_db()
-        usuario = db.execute(
+        usuario = db.fetchone(
             'SELECT * FROM usuarios WHERE email = ? AND senha_hash = ? AND ativo = 1',
             (email, hash_senha(senha))
-        ).fetchone()
+        )
         db.close()
 
         if usuario:
@@ -369,6 +398,8 @@ def login():
 
             if usuario['perfil'] == 'dp':
                 return redirect(url_for('dp_dashboard'))
+            elif usuario['perfil'] == 'supervisor' or usuario['perfil'] == 'regional':
+                return redirect(url_for('supervisor_dashboard'))
             else:
                 return redirect(url_for('gestor_dashboard'))
 
@@ -405,16 +436,16 @@ def dp_dashboard():
         query += ' AND departamento = ?'
         params.append(filtro_loja)
     if filtro_status == 'pendente':
-        query += ' AND (status_1 = "pendente" OR status_2 = "pendente")'
+        query += " AND (status_1 = 'pendente' OR status_2 = 'pendente')"
     elif filtro_status == 'atrasado':
-        query += ' AND ((status_1 = "pendente" AND vencimento_1 <= ?) OR (status_2 = "pendente" AND vencimento_2 <= ?))'
+        query += " AND ((status_1 = 'pendente' AND vencimento_1 <= ?) OR (status_2 = 'pendente' AND vencimento_2 <= ?))"
         params.extend([hoje, hoje])
     elif filtro_status == 'concluido':
-        query += ' AND status_1 != "pendente" AND status_2 != "pendente"'
+        query += " AND status_1 != 'pendente' AND status_2 != 'pendente'"
     elif filtro_status == 'periodo1':
-        query += ' AND status_1 = "pendente"'
+        query += " AND status_1 = 'pendente'"
     elif filtro_status == 'periodo2':
-        query += ' AND status_2 = "pendente" AND status_1 != "pendente"'
+        query += " AND status_2 = 'pendente' AND status_1 != 'pendente'"
 
     if filtro_busca:
         query += ' AND (nome LIKE ? OR matricula LIKE ? OR funcao LIKE ?)'
@@ -422,10 +453,10 @@ def dp_dashboard():
         params.extend([busca, busca, busca])
 
     query += ' ORDER BY setor, departamento, nome'
-    colaboradores = db.execute(query, params).fetchall()
+    colaboradores = db.fetchall(query, params)
 
     # Estatisticas
-    stats = db.execute('''
+    stats = db.fetchone('''
         SELECT
             COUNT(*) as total,
             SUM(CASE WHEN status_1 = 'pendente' OR status_2 = 'pendente' THEN 1 ELSE 0 END) as pendentes,
@@ -434,18 +465,18 @@ def dp_dashboard():
             SUM(CASE WHEN status_2 = 'efetivado' THEN 1 ELSE 0 END) as efetivados,
             SUM(CASE WHEN status_1 = 'desligado' OR status_2 = 'desligado' THEN 1 ELSE 0 END) as desligados
         FROM colaboradores
-    ''', (hoje, hoje)).fetchone()
+    ''', (hoje, hoje))
 
     # Listas para filtros
-    regionais = db.execute(
-        'SELECT DISTINCT setor FROM colaboradores WHERE setor IS NOT NULL AND setor != "" ORDER BY setor'
-    ).fetchall()
-    lojas = db.execute(
-        'SELECT DISTINCT departamento FROM colaboradores WHERE departamento IS NOT NULL AND departamento != "" ORDER BY departamento'
-    ).fetchall()
+    regionais = db.fetchall(
+        "SELECT DISTINCT setor FROM colaboradores WHERE setor IS NOT NULL AND setor != '' ORDER BY setor"
+    )
+    lojas = db.fetchall(
+        "SELECT DISTINCT departamento FROM colaboradores WHERE departamento IS NOT NULL AND departamento != '' ORDER BY departamento"
+    )
 
     # Gestores para contatos WhatsApp
-    gestores = db.execute('SELECT * FROM gestores WHERE ativo = 1').fetchall()
+    gestores = db.fetchall('SELECT * FROM gestores WHERE ativo = 1')
     gestores_map = {}
     for g in gestores:
         if g['regional']:
@@ -515,10 +546,10 @@ def gestor_dashboard():
         query = 'SELECT * FROM colaboradores WHERE departamento = ?'
         params = [gestor_loja]
     else:
-        query = 'SELECT * WHERE 1=0'
+        query = 'SELECT * FROM colaboradores WHERE 1=0'
         params = []
 
-    colaboradores = db.execute(query, params).fetchall()
+    colaboradores = db.fetchall(query, params)
 
     # Separar por periodo
     periodo_1_pendente = []
@@ -586,7 +617,7 @@ def supervisor_dashboard():
         params_extra.append(filtro_loja)
 
     # Estatisticas gerais da regional
-    stats = db.execute(f'''
+    stats = db.fetchone(f'''
         SELECT
             COUNT(*) as total,
             SUM(CASE WHEN status_1 = 'pendente' OR status_2 = 'pendente' THEN 1 ELSE 0 END) as pendentes,
@@ -595,10 +626,10 @@ def supervisor_dashboard():
             SUM(CASE WHEN status_2 = 'efetivado' THEN 1 ELSE 0 END) as efetivados,
             SUM(CASE WHEN status_1 = 'desligado' OR status_2 = 'desligado' THEN 1 ELSE 0 END) as desligados
         FROM colaboradores WHERE 1=1 {where_extra}
-    ''', (hoje, hoje) + tuple(params_extra)).fetchone()
+    ''', (hoje, hoje) + tuple(params_extra))
 
     # Estatisticas por loja da regional (visao de gestao)
-    lojas_stats = db.execute(f'''
+    lojas_stats_raw = db.fetchall(f'''
         SELECT
             departamento as loja,
             COUNT(*) as total,
@@ -611,11 +642,11 @@ def supervisor_dashboard():
         WHERE departamento IS NOT NULL AND departamento != '' {where_extra}
         GROUP BY departamento
         ORDER BY departamento
-    ''', (hoje, hoje) + tuple(params_extra)).fetchall()
+    ''', (hoje, hoje) + tuple(params_extra))
 
     # Calcular efetivos (fora do periodo de experiencia) por loja
     lojas_stats_list = []
-    for loja in lojas_stats:
+    for loja in lojas_stats_raw:
         item = dict(loja)
         total = item['total']
         em_exp = item['em_experiencia'] if item['em_experiencia'] else 0
@@ -627,7 +658,7 @@ def supervisor_dashboard():
     lojas_stats = lojas_stats_list
 
     # Colaboradores atrasados (urgente)
-    atrasados_raw = db.execute(f'''
+    atrasados_raw = db.fetchall(f'''
         SELECT c.*, 
             CASE 
                 WHEN status_1 = 'pendente' AND vencimento_1 <= ? THEN 1
@@ -642,7 +673,7 @@ def supervisor_dashboard():
            OR (status_2 = 'pendente' AND vencimento_2 <= ?)
         {where_extra}
         ORDER BY vencimento_atrasado ASC
-    ''', (hoje, hoje, hoje, hoje, hoje, hoje) + tuple(params_extra)).fetchall()
+    ''', (hoje, hoje, hoje, hoje, hoje, hoje) + tuple(params_extra))
 
     atrasados = []
     hoje_date = datetime.now().date()
@@ -656,7 +687,7 @@ def supervisor_dashboard():
         atrasados.append(item)
 
     # Colaboradores pendentes (precisam de validacao)
-    pendentes_raw = db.execute(f'''
+    pendentes_raw = db.fetchall(f'''
         SELECT c.*,
             CASE 
                 WHEN status_1 = 'pendente' THEN vencimento_1
@@ -670,7 +701,7 @@ def supervisor_dashboard():
         WHERE (status_1 = 'pendente' OR (status_2 = 'pendente' AND status_1 != 'pendente'))
         {where_extra}
         ORDER BY vencimento_pendente ASC
-    ''', tuple(params_extra)).fetchall()
+    ''', tuple(params_extra))
 
     pendentes = []
     for p in pendentes_raw:
@@ -693,10 +724,10 @@ def supervisor_dashboard():
         pendentes.append(item)
 
     # Lista de lojas para filtro
-    lojas = db.execute(
-        f'SELECT DISTINCT departamento FROM colaboradores WHERE departamento IS NOT NULL AND departamento != "" {where_extra} ORDER BY departamento',
+    lojas = db.fetchall(
+        f"SELECT DISTINCT departamento FROM colaboradores WHERE departamento IS NOT NULL AND departamento != '' {where_extra} ORDER BY departamento",
         tuple(params_extra)
-    ).fetchall()
+    )
 
     db.close()
 
@@ -730,7 +761,7 @@ def validar():
         if periodo == 2 and acao not in ['efetivado', 'desligado']:
             return jsonify({'sucesso': False, 'mensagem': 'Acao invalida para periodo 2'}), 400
 
-        col = db.execute('SELECT * FROM colaboradores WHERE id = ?', (colaborador_id,)).fetchone()
+        col = db.fetchone('SELECT * FROM colaboradores WHERE id = ?', (colaborador_id,))
         if not col:
             return jsonify({'sucesso': False, 'mensagem': 'Colaborador nao encontrado'}), 404
 
@@ -774,9 +805,9 @@ def exportar():
     db = get_db()
 
     if session['perfil'] == 'dp':
-        colaboradores = db.execute('SELECT * FROM colaboradores ORDER BY setor, departamento, nome').fetchall()
+        colaboradores = db.fetchall('SELECT * FROM colaboradores ORDER BY setor, departamento, nome')
     elif session.get('loja'):
-        colaboradores = db.execute('SELECT * FROM colaboradores WHERE departamento = ? ORDER BY nome', (session['loja'],)).fetchall()
+        colaboradores = db.fetchall('SELECT * FROM colaboradores WHERE departamento = ? ORDER BY nome', (session['loja'],))
     else:
         colaboradores = []
 
@@ -862,7 +893,7 @@ def exportar():
 @dp_required
 def gerenciar_usuarios():
     db = get_db()
-    usuarios = db.execute('SELECT * FROM usuarios ORDER BY perfil, nome').fetchall()
+    usuarios = db.fetchall('SELECT * FROM usuarios ORDER BY perfil, nome')
     db.close()
     return render_template('usuarios.html', usuarios=usuarios)
 
@@ -916,14 +947,14 @@ def atualizar_pagina():
     db = get_db()
     hoje = datetime.now().date().isoformat()
 
-    stats = db.execute('''
+    stats = db.fetchone('''
         SELECT
             COUNT(*) as total,
             SUM(CASE WHEN status_1 != 'pendente' OR status_2 != 'pendente' THEN 1 ELSE 0 END) as validados
         FROM colaboradores
-    ''').fetchone()
+    ''')
 
-    ultima = db.execute('SELECT MAX(atualizado_em) as data FROM colaboradores').fetchone()
+    ultima = db.fetchone('SELECT MAX(atualizado_em) as data FROM colaboradores')
 
     db.close()
 
@@ -970,8 +1001,8 @@ def upload_planilha():
     try:
         sys.path.insert(0, BASE_DIR)
         from database import importar_excel, criar_usuario_dp
-        importar_excel(caminho_novo)
-        criar_usuario_dp()
+        db_upload = get_db()
+        importar_excel(caminho_novo, db_conn=db_upload)
         flash(f'Planilha "{arquivo.filename}" importada com sucesso!', 'sucesso')
     except Exception as e:
         flash(f'Erro ao importar: {e}', 'erro')
@@ -985,7 +1016,7 @@ def api_stats():
     db = get_db()
     hoje = datetime.now().date().isoformat()
 
-    stats = db.execute('''
+    stats = db.fetchone('''
         SELECT
             COUNT(*) as total,
             SUM(CASE WHEN status_1 = 'pendente' THEN 1 ELSE 0 END) as p1_pendente,
@@ -996,7 +1027,7 @@ def api_stats():
             SUM(CASE WHEN status_2 = 'efetivado' THEN 1 ELSE 0 END) as efetivados,
             SUM(CASE WHEN status_1 = 'desligado' OR status_2 = 'desligado' THEN 1 ELSE 0 END) as desligados
         FROM colaboradores
-    ''', (hoje, hoje)).fetchone()
+    ''', (hoje, hoje))
 
     db.close()
     return jsonify(dict(stats))

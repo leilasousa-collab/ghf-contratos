@@ -129,8 +129,10 @@ def converter_data(data_val):
             continue
     return None
 
-def importar_excel(caminho_excel):
-    """Importa dados da planilha Excel para o banco SQLite"""
+def importar_excel(caminho_excel, db_conn=None):
+    """Importa dados da planilha Excel para o banco de dados.
+    Se db_conn for fornecido, usa a conexao existente (PostgreSQL wrapper).
+    Caso contrario, cria conexao SQLite local."""
     if not os.path.exists(caminho_excel):
         print(f"ERRO: Arquivo nao encontrado: {caminho_excel}")
         return False
@@ -219,12 +221,22 @@ def importar_excel(caminho_excel):
 
     print(f"Mapeamento: {indices}")
 
-    conn = criar_banco()
-    cursor = conn.cursor()
+    if db_conn:
+        db = db_conn
+        close_conn = False
+    else:
+        conn = criar_banco()
+        db = type('DB', (), {
+            'execute': lambda self, q, p=None: conn.cursor().execute(q.replace('?', '%s') if p else q, p or ()),
+            'fetchall': lambda self, q, p=None: conn.cursor().execute(q.replace('?', '%s') if p else q, p or ()).fetchall(),
+            'commit': lambda self: conn.commit(),
+            'close': lambda self: conn.close()
+        })()
+        close_conn = True
 
     # Manter registros ja validados
     registros_validados = {}
-    for row in cursor.execute('SELECT id, matricula, status_1, status_2, validacao_gestor_1, validacao_data_1, validacao_gestor_2, validacao_data_2 FROM colaboradores WHERE status_1 != "pendente" OR status_2 != "pendente"').fetchall():
+    for row in db.fetchall('SELECT id, matricula, status_1, status_2, validacao_gestor_1, validacao_data_1, validacao_gestor_2, validacao_data_2 FROM colaboradores WHERE status_1 != ? OR status_2 != ?', ('pendente', 'pendente')):
         registros_validados[row[1]] = {
             'status_1': row[2], 'status_2': row[3],
             'validacao_gestor_1': row[4], 'validacao_data_1': row[5],
@@ -232,7 +244,7 @@ def importar_excel(caminho_excel):
         }
 
     # Limpar dados antigos
-    cursor.execute('DELETE FROM colaboradores')
+    db.execute('DELETE FROM colaboradores')
 
     importados = 0
     erros = 0
@@ -271,7 +283,7 @@ def importar_excel(caminho_excel):
             # Recuperar validacoes anteriores
             valid = registros_validados.get(matricula, {})
 
-            cursor.execute('''
+            db.execute('''
                 INSERT INTO colaboradores
                 (empresa, nome_empresa, matricula, nome, ddd, celular, funcao, email,
                  data_admissao, vencimento_1, vencimento_2, departamento, setor,
@@ -294,8 +306,9 @@ def importar_excel(caminho_excel):
             erros += 1
             print(f"Erro linha {row_idx}: {e}")
 
-    conn.commit()
-    conn.close()
+    db.commit()
+    if close_conn:
+        db.close()
     try:
         wb.close()
     except:
